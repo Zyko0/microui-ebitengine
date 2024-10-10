@@ -60,7 +60,14 @@ func fnv1a(init ID, data []byte) ID {
 }
 
 func ptrToBytes(ptr unsafe.Pointer) []byte {
-	return unsafe.Slice((*byte)(unsafe.Pointer(&ptr)), unsafe.Sizeof(ptr))
+	slice := unsafe.Slice((*byte)(unsafe.Pointer(&ptr)), unsafe.Sizeof(ptr))
+
+	// `slice` points to `ptr`, which is currently allocated on the stack.
+	// after this function returns, `slice` will point to freed memory, so
+	// we need to copy it to the heap for this to be safe
+	heapSlice := make([]byte, len(slice))
+	copy(heapSlice, slice)
+	return heapSlice
 }
 
 // id returns a hash value based on the data and the last ID on the stack.
